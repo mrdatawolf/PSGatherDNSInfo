@@ -35,7 +35,7 @@ if ($VerboseOutput) {
     $VerbosePreference = "Continue"
 }
 
-function Ensure-WhoisInstalled {
+function Initialize-Whois {
     $whoisCmd = "whois64.exe"
     if (-not (Get-Command $whoIsCmd -ErrorAction SilentlyContinue)) {
         Write-Host "$whoIsCmd not found. Attempting to install via winget..."
@@ -117,7 +117,7 @@ if ($DomainListFile) {
     $Domains = Get-Content $DomainListFile
 }
 # Ensure whois is available
-$whoisCmd = Ensure-WhoisInstalled
+$whoisCmd = Initialize-Whois
 $results = foreach ($domain in $Domains) {
     Write-Verbose "Processing $domain"
     $registrar = Get-DomainRegistrar -Domain $domain -WhoisCmd $whoisCmd
