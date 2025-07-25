@@ -37,47 +37,72 @@ if ($VerboseOutput) {
 
 function Ensure-WhoisInstalled {
     $whoisCmd = "whois64.exe"
-    if (-not (Get-Command $whoisCmd -ErrorAction SilentlyContinue)) {
-        Write-Warning "$whoisCmd not found. Please install it manually and ensure it's in your PATH."
+    if (-not (Get-Command $whoIsCmd -ErrorAction SilentlyContinue)) {
+        Write-Host "$whoIsCmd not found. Attempting to install via winget..."
+        try {
+            winget install --id Microsoft.Sysinternals.Whois -e --silent
+            Start-Sleep -Seconds 5
+            if (Get-Command $whoisCmd -ErrorAction SilentlyContinue) {
+                Write-Host "Whois64 installed successfully."
+            } else {
+                Write-Warning "Whois64 installation failed. Registrar info may not be available."
+            }
+        } catch {
+            Write-Warning "Error during whois installation: $_"
+        }
     }
+
     return $whoisCmd
 }
-
 function Get-DomainRegistrar {
     param ([string]$Domain, [string]$WhoisCmd)
     try {
         $whoisOutput = & $WhoisCmd $Domain 2>&1 | Where-Object { $_ -notmatch "No such host is known" }
         $registrarLines = $whoisOutput | Select-String -Pattern "Registrar:|Sponsoring Registrar:|Registrar Name:"
         if ($registrarLines) {
+
             return ($registrarLines | Select-Object -Last 1).Line.Trim()
         } else {
-            return "Registrar info not found"
+
+            return "No Registrar info not found"
         }
     } catch {
+
         return "Registrar info not found"
     }
 }
-
 function Get-DnsServers {
     param ([string]$Domain)
     try {
+        # Step 1: Get all DNS hostnames
         $dnsRecords = Resolve-DnsName -Name $Domain -Type NS -ErrorAction Stop
-        return ($dnsRecords | Where-Object { $_.Type -eq "NS" } | Select-Object -ExpandProperty NameHost)
+        $dnsHosts = $dnsRecords | Where-Object { $_.Type -eq "NS" -and $_.NameHost } | Select-Object -ExpandProperty NameHost
+        # Step 2: Extract base domains
+        $baseDomains = @()
+        foreach ($hoster in $dnsHosts) {
+            $parts = $hoster -split '\.'
+            if ($parts.Length -ge 2) {
+                $baseDomain = ($parts[-2..-1] -join '.')
+                $baseDomains += $baseDomain
+            }
+        }
+        # Step 3: Return unique base domains
+        return ($baseDomains | Sort-Object -Unique)
     } catch {
         return "DNS server info not found"
     }
 }
-
 function Get-MxRecords {
     param ([string]$Domain)
     try {
         $mxRecords = Resolve-DnsName -Name $Domain -Type MX -ErrorAction Stop
+
         return ($mxRecords | Where-Object { $_.Type -eq "MX" } | Select-Object -ExpandProperty NameExchange)
     } catch {
+
         return "MX record info not found"
     }
 }
-
 function Get-ARecord {
     param ([string]$Domain)
     try {
@@ -87,22 +112,18 @@ function Get-ARecord {
         return "A record not found"
     }
 }
-
 # Load domains from file if specified
 if ($DomainListFile) {
     $Domains = Get-Content $DomainListFile
 }
-
 # Ensure whois is available
 $whoisCmd = Ensure-WhoisInstalled
-
 $results = foreach ($domain in $Domains) {
     Write-Verbose "Processing $domain"
     $registrar = Get-DomainRegistrar -Domain $domain -WhoisCmd $whoisCmd
     $dnsServers = Get-DnsServers -Domain $domain
     $mxRecords = Get-MxRecords -Domain $domain
     $aRecords = Get-ARecord -Domain $domain
-
     $result = [PSCustomObject]@{
         Domain     = $domain
         Registrar  = $registrar
@@ -110,14 +131,12 @@ $results = foreach ($domain in $Domains) {
         MxRecords  = ($mxRecords -join ", ")
         ARecord    = ($aRecords -join ", ")
     }
-
     # Output to console
     Write-Host "Domain:`t$($result.Domain)"
     Write-Host "Registrar:`t$($result.Registrar)"
     Write-Host ("DNS Servers:`t" + ($result.DnsServers -replace ',', "`n`t"))
     Write-Host ("MX Records:`t" + ($result.MxRecords -replace ',', "`n`t"))
     Write-Host ("A Record:`t" + ($result.ARecord -replace ',', "`n`t"))
-
     Write-Host ""
 
     $result
