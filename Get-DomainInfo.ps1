@@ -33,7 +33,6 @@ param (
 if ($VerboseOutput) {
     $VerbosePreference = "Continue"
 }
-
 function Initialize-Whois {
     $whoisCmd = "whois64.exe"
     if (-not (Get-Command $whoisCmd -ErrorAction SilentlyContinue)) {
@@ -41,16 +40,36 @@ function Initialize-Whois {
         try {
             winget install --id Microsoft.Sysinternals.Whois -e --silent
             Start-Sleep -Seconds 5
-            if (Get-Command $whoisCmd -ErrorAction SilentlyContinue) {
+            # Accept Sysinternals EULA for current user
+            $regPath = "HKCU:\Software\Sysinternals\Whois"
+            if (-not (Test-Path $regPath)) {
+                New-Item -Path $regPath -Force | Out-Null
+            }
+            Set-ItemProperty -Path $regPath -Name "EulaAccepted" -Value 1
+            # Try to find the executable manually
+            $whoisPath = Get-ChildItem -Path "$env:ProgramFiles\Sysinternals*" -Recurse -Filter whois64.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+            if ($whoisPath) {
+                Write-Host "Whois64 installed at $whoisPath."
+                $env:PATH += ";$($whoisPath | Split-Path)"
+                return $whoisPath
+            } elseif (Get-Command $whoisCmd -ErrorAction SilentlyContinue) {
                 Write-Host "Whois64 installed successfully."
+                return $whoisCmd
             } else {
                 Write-Warning "Whois64 installation failed. Registrar info may not be available."
+                return $null
             }
         } catch {
             Write-Warning "Error during whois installation: $_"
+            return $null
         }
     }
-
+    # Accept Sysinternals EULA if not already set
+    $regPath = "HKCU:\Software\Sysinternals\Whois"
+    if (-not (Test-Path $regPath)) {
+        New-Item -Path $regPath -Force | Out-Null
+    }
+    Set-ItemProperty -Path $regPath -Name "EulaAccepted" -Value 1
     return $whoisCmd
 }
 
