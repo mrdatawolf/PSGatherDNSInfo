@@ -64,7 +64,10 @@ function Initialize-Whois {
                 Pause
                 exit
             } else {
-                Write-Warning "Whois64 installation failed. Registrar info may not be available."
+                Write-Warning "Whois64 installation failed. Registrar info may not be available." -ForegroundColor Red
+                Write-Host "Please install whois64 manually or ensure it is in your PATH to get all the info." -ForegroundColor Yellow
+                Write-Host "You can try 'winget install --id Microsoft.Sysinternals.Whois' to install it."
+
                 return $null
             }
         } catch {
