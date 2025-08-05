@@ -53,33 +53,22 @@ function Initialize-Whois {
                 New-Item -Path $regPath -Force | Out-Null
             }
             Set-ItemProperty -Path $regPath -Name "EulaAccepted" -Value 1
-            # Prime the tool to ensure EULA is accepted
-            $dummyDomain = "example.com"
-            if ($whoisPath) {
-                & $whoisPath $dummyDomain | Out-Null
-            } else {
-                & $whoisCmd $dummyDomain | Out-Null
-            }
             # Try to find the executable manually
             $whoisPath = Get-ChildItem -Path "$env:ProgramFiles\Sysinternals*" -Recurse -Filter whois64.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
             if ($whoisPath) {
+                # Prime the tool to ensure EULA is accepted
+                & $whoisPath "example.com" | Out-Null
                 Write-Host "Whois64 installed at $whoisPath."
                 $env:PATH += ";$($whoisPath | Split-Path)"
-
-                return $whoisPath
-            } elseif (Get-Command $whoisCmd -ErrorAction SilentlyContinue) {
-                Write-Host "Whois64 installed successfully. The command will exit. Please run it again to get all the information" -ForegroundColor Yellow
+                Write-Host "Whois64 installed successfully. The script will exit. Please run it again to get all the information." -ForegroundColor Yellow
                 Pause
-                # Exit the script to ensure the user can run it again with the correct PATH
                 exit
             } else {
                 Write-Warning "Whois64 installation failed. Registrar info may not be available."
-
                 return $null
             }
         } catch {
             Write-Warning "Error during whois installation: $_"
-
             return $null
         }
     }

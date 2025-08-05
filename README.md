@@ -4,12 +4,15 @@ get the info we need to properly work on DNS issues
 ### If the script needs to install whois it will exit. Just run it again.
  
 ## Note right click and save as for the following links.
-[Download exe](https://github.com/mrdatawolf/PSGatherDNSInfo/releases/download/v1.0.0/Get-DomainInfo.exe) 
+[Download exe](https://github.com/mrdatawolf/PSGatherDNSInfo/releases/download/v1.1.2/Get-DomainInfo.exe) 
 
 [Download ps1](https://raw.githubusercontent.com/mrdatawolf/PSGatherDNSInfo/refs/heads/main/Get-DomainInfo.ps1)
 
 # If it is failing strangely you can try running...
 ## first:
+winget remove --id Microsoft.Sysinternals.Whois
+
+### it is possible the best fix will be to also just manually install whois:
 winget remove --id Microsoft.Sysinternals.Whois
 
 ## second:
