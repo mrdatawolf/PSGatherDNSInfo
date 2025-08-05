@@ -30,6 +30,10 @@ param (
     [switch]$VerboseOutput
 )
 
+if (-not $Domains) {
+    $Domains = Read-Host "Please enter the domain name(s) (comma separated if multiple)"
+}
+
 if ($VerboseOutput) {
     $VerbosePreference = "Continue"
 }
@@ -241,7 +245,8 @@ $results = foreach ($domain in $Domains) {
     Write-Host "DKIM:`t$($result.DKIM)"
     Write-Host "DMARC:`t$($result.DMARC)"
     Write-Host ""
-
+    Pause
+    
     $result
 }
 
