@@ -8,6 +8,9 @@ get the info we need to properly work on DNS issues
 
 [Download ps1](https://raw.githubusercontent.com/mrdatawolf/PSGatherDNSInfo/refs/heads/main/Get-DomainInfo.ps1)
 
+##this is a test:
+[Download sh](https://raw.githubusercontent.com/mrdatawolf/PSGatherDNSInfo/refs/heads/main/Get-DomainInfo.sh)
+
 # If it is failing strangely you can try running...
 ## first:
 winget remove --id Microsoft.Sysinternals.Whois
