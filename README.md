@@ -5,8 +5,7 @@ get the info we need to properly work on DNS issues
 
 ### Also if it just sits there for more then a minute press 'y' and enter.  You might not have accepted the winget license before.
 
-### Winget install is just being weird on the exe.  you should do "winget install --id Microsoft.Sysinternals.Whois
-" it it talks about failing to install.
+### Winget install is weird.  Do "winget install --id Microsoft.Sysinternals.Whois" if it talks about failing to install.
 
 ## Note right click and save as for the following links.
 [Download exe](https://github.com/mrdatawolf/PSGatherDNSInfo/releases/download/v1.1.3/Get-DomainInfo.exe) 
