@@ -68,7 +68,7 @@ function Initialize-Whois {
 
                 return $whoisPath
             } elseif (Get-Command $whoisCmd -ErrorAction SilentlyContinue) {
-                Write-Host "Whois64 installed successfully. The command will exit. Please run it again to get all the information"
+                Write-Host "Whois64 installed successfully. The command will exit. Please run it again to get all the information" -ForegroundColor Yellow
                 Pause
                 # Exit the script to ensure the user can run it again with the correct PATH
                 exit
