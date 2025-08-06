@@ -29,4 +29,6 @@ winget install --id Microsoft.Sysinternals.Whois
     Win11 Pro
 
     Set-ExecutionPolicy -Scope CurrentUser Unrestricted
-
+<!-- Purpose: Lookup  DNS info for a Domain, this gives you Registrar, DNS Servers,MX Records,A Record,SPF,DMARC,DKIM -->
+<!-- INSTALL_COMMAND: curl -o Get-DomainInfo.ps1 https://github.com/mrdatawolf/PSGatherDNSInfo/raw/main/Get-DomainInfo.ps1 -->
+<!-- RUN_COMMAND: Get-DomainInfo.ps1 -->
