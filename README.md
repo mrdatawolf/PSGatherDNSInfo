@@ -8,7 +8,7 @@ get the info we need to properly work on DNS issues
 ### Winget install is weird.  Do "winget install --id Microsoft.Sysinternals.Whois" if it talks about failing to install.
 
 ## Note right click and save as for the following links.
-[Download exe](https://github.com/mrdatawolf/PSGatherDNSInfo/releases/download/v1.1.5/Get-DomainInfo.exe) 
+[Download exe](https://github.com/mrdatawolf/PSGatherDNSInfo/releases/download/v1.2.0/Get-DomainInfo.exe) 
 
 [Download ps1](https://raw.githubusercontent.com/mrdatawolf/PSGatherDNSInfo/refs/heads/main/Get-DomainInfo.ps1)
 
