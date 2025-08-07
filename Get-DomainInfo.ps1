@@ -27,11 +27,13 @@ param (
 
     [string]$ExportCsv,
 
+    [bool]$Fullpath,
+
     [switch]$VerboseOutput
 )
 
 if (-not $Domains) {
-    $Domains = Read-Host "Please enter the domain name(s) (comma separated if multiple)"
+    $Domains = Read-Host "Please enter the domain name"
 }
 
 if ($VerboseOutput) {
@@ -40,56 +42,23 @@ if ($VerboseOutput) {
 function Initialize-Whois {
     $whoisCmd = "whois64.exe"
     $regPath = "HKCU:\Software\Sysinternals\Whois"
-    # Check if whois is installed but not available
-    $wingetWhois = winget list --id Microsoft.Sysinternals.Whois | Select-String "Whois"
-    if (-not (Get-Command $whoisCmd -ErrorAction SilentlyContinue) -and $wingetWhois) {
-        Write-Host "Removing incomplete or stub Whois install..."
-        winget remove --id Microsoft.Sysinternals.Whois
-        Start-Sleep -Seconds 2
-    }
-    if (-not (Get-Command $whoisCmd -ErrorAction SilentlyContinue)) {
-        Write-Host "$whoisCmd not found. Attempting to install via winget..."
-        try {
-            winget install --id Microsoft.Sysinternals.Whois -e --silent
-            Start-Sleep -Seconds 5
-            # Accept Sysinternals EULA for current user
-            if (-not (Test-Path $regPath)) {
-                New-Item -Path $regPath -Force | Out-Null
-            }
-            Set-ItemProperty -Path $regPath -Name "EulaAccepted" -Value 1
-            # Try to find the executable manually
-            $whoisPath = Get-ChildItem -Path "$env:ProgramFiles\Sysinternals*" -Recurse -Filter whois64.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-            if ($whoisPath) {
-                # Prime the tool to ensure EULA is accepted
-                & $whoisPath "example.com" | Out-Null
-                Write-Host "Whois64 installed at $whoisPath."
-                $env:PATH += ";$($whoisPath | Split-Path)"
-                Write-Host "Whois64 installed successfully. The script will exit. Please run it again to get all the information." -ForegroundColor Yellow
-                Pause
-                exit
-            } else {
-                Write-Warning "Whois64 installation failed. Registrar info may not be available." -ForegroundColor Red
-                Write-Host "Please install whois64 manually or ensure it is in your PATH to get all the info." -ForegroundColor Yellow
-                Write-Host "You can try 'winget install --id Microsoft.Sysinternals.Whois' to install it."
-
-                return $null
-            }
-        } catch {
-            Write-Warning "Error during whois installation: $_"
-            return $null
-        }
-    }
     # Accept Sysinternals EULA if not already set
+     Write-Verbose "Testing for whois64..."
     if (-not (Test-Path $regPath)) {
         New-Item -Path $regPath -Force | Out-Null
     }
+     Write-Verbose "Setting eula acceptance for whois64..."
     Set-ItemProperty -Path $regPath -Name "EulaAccepted" -Value 1
-    # Always use full path if possible
-    $whoisPath = Get-ChildItem -Path "$env:ProgramFiles\Sysinternals*" -Recurse -Filter whois64.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-    if ($whoisPath) {
+    if($FullPath) {
+        # Always use full path if possible
+        Write-Verbose "Getting whois path..."
+        $whoisPath = Get-ChildItem -Path "$env:ProgramFiles\Sysinternals*" -Recurse -Filter whois64.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+        if ($whoisPath) {
 
         return $whoisPath
+        }
     }
+ 
 
     return $whoisCmd
 }
@@ -104,11 +73,11 @@ function Get-DomainRegistrar {
             return ($registrarLines | Select-Object -Last 1).Line.Trim()
         } else {
 
-            return "No Registrar info found"
+            return "No Registrar info found or whois64.exe is not installed"
         }
     } catch {
 
-        return "Registrar info not found"
+        return "Registrar info not found or whois64.exe is not installed"
     }
 }
 
@@ -208,21 +177,31 @@ function Get-DmarcInfo {
 }
 
 # Load domains from file if specified
+ Write-Verbose "Loading domains..."
 if ($DomainListFile) {
     $Domains = Get-Content $DomainListFile
 }
 
 # Ensure whois is available
+ Write-Verbose "Initializing Whois..."
 $whoisCmd = Initialize-Whois
 
 $results = foreach ($domain in $Domains) {
+    Write-Host "This process could take 45 seconds before returning the data..."
     Write-Verbose "Processing $domain"
+    Write-Verbose "Getting Registrar data..."
     $registrar = Get-DomainRegistrar -Domain $domain -WhoisCmd $whoisCmd
+    Write-Verbose "Getting Getting DNS Server data..."
     $dnsServers = Get-DnsServers -Domain $domain
+    Write-Verbose "Getting MxRecord data..."
     $mxRecords = Get-MxRecords -Domain $domain
+    Write-Verbose "Getting A record data..."
     $aRecords = Get-ARecord -Domain $domain
+    Write-Verbose "Getting SPF record data..."
     $spfRecord = Get-SpfRecord -Domain $domain
+    Write-Verbose "Getting DKIM record data..."
     $dkimInfo = Get-DkimInfo -Domain $domain
+    Write-Verbose "Getting Dmarc record data..."
     $dmarcInfo = Get-DmarcInfo -Domain $domain
 
     $result = [PSCustomObject]@{
